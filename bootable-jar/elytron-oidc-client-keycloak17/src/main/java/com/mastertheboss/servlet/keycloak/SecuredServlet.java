@@ -1,9 +1,7 @@
 
 package com.mastertheboss.servlet.keycloak;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.security.Principal;
+import org.wildfly.security.http.oidc.OidcPrincipal;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.HttpMethodConstraint;
@@ -12,10 +10,13 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.security.Principal;
 
 
 @WebServlet("/secure")
-@ServletSecurity(httpMethodConstraints = { @HttpMethodConstraint(value = "GET", rolesAllowed = { "customer-manager" }) })
+@ServletSecurity(httpMethodConstraints = {@HttpMethodConstraint(value = "GET", rolesAllowed = {"customer-manager"})})
 public class SecuredServlet extends HttpServlet {
 
     @Override
@@ -27,7 +28,14 @@ public class SecuredServlet extends HttpServlet {
             writer.println("    <p>");
             writer.print(" Current Principal '");
             Principal user = req.getUserPrincipal();
-            writer.print(user != null ? user.getName() : "NONE");
+            final String name;
+            if (user instanceof OidcPrincipal) {
+                final OidcPrincipal<?> oidcUser = (OidcPrincipal<?>) user;
+                name = oidcUser.getOidcSecurityContext().getIDToken().getPreferredUsername();
+            } else {
+                name = user != null ? user.getName() : "NONE";
+            }
+            writer.print(name);
             writer.print("'");
             writer.println("    </p>");
             writer.println("  </body>");
